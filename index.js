@@ -179,3 +179,27 @@ app.put('/assinatura/:id', (req, res)=>{
 app.listen(3000, ()=> {
     console.log("Servidor backend online http://localhost:3000")
 })
+
+
+// CREATE DATABASE IF NOT EXISTS centro_treinamento;
+
+USE centro_treinamento;
+
+CREATE TABLE IF NOT EXISTS sessoes(
+id INT AUTO_INCREMENT PRIMARY KEY,
+aluno VARCHAR(100),
+personal VARCHAR(100),
+tipo_treino VARCHAR(50),
+data DATE,
+horario TIME,
+observacoes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS assinatura(
+id INT AUTO_INCREMENT PRIMARY KEY,
+nome VARCHAR (100),
+duracao_meses VARCHAR (100),
+preco  decimal(10,2),
+descricao VARCHAR (200)
+);
+//
