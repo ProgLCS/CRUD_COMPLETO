@@ -1,139 +1,181 @@
-const express = require('express')
-const mysql = require('mysql2')
-
+const express = require ('express')
+const mysql = require ('mysql2')
 const app = express()
+
+
+
+app.get('/',(req,res)=>{
+    res.send("Servidor iniciado, sistema de cadastro de treinamentos pronto!")
+})
+
+const treinamento = mysql.createConnection({
+    host:'localhost',
+    user:'root',
+    password:'',
+    database:'centro_treinamento'
+    
+})
+
 
 app.use(express.json())
 
-const conexao = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'loja'
-})
-// PARTE DE PRODUTOS
-app.post('/produtos', (req, res) => {
-    const  {nome, preco, quantidade}= req.body
-   
+app.post('/sessoes', (req,res)=>{
+    const sessoes={aluno, personal, tipo_treino, data, horario, observacoes}= req.body
 
-    conexao.query(
-        'INSERT INTO produtos (nome, preco, quantidade) VALUES (?,?,?)',
+    if (!aluno || typeof aluno != 'string' || aluno.trim() == '') {
+        return res.status(400).send('Cadastre corretamente o Aluno, preencha todos os campos com as informações correta');
+    }
+
+    if (!personal || typeof personal != 'string' || personal.trim() == '') {
+        return res.status(400).send('Cadastre corretamente o Personal, preencha todos os campos com as informações correta');
+    }
+    
+    if (!tipo_treino || typeof tipo_treino != 'string' || tipo_treino.trim() == '') {
+        return res.status(400).send('Atenção, cadastre o treino corretamente');
+    }
+    
+    if (!data || typeof data != 'string' || data.trim() == '') {
+        return res.status(400).send('Atenção, preencha a data corretamente');
+    }
+    
+    if (!horario || typeof horario != 'string' || horario.trim() == '') {
+        return res.status(400).send('Atenção, não se esqueça do horário!');
+    }
+
+
+
+    treinamento.query(
+        'INSERT INTO sessoes (aluno,personal,tipo_treino,data,horario,observacoes) VALUE( ?, ?, ?, ?, ?, ?)',
+        [sessoes.aluno, sessoes.personal,sessoes.tipo_treino, sessoes.data, sessoes.horario, sessoes.observacoes],
+        ()=>{
+            res.status(201).send('A sessão foi agendada com sucesso, aguardamos ansiosamente pelo começo!')
+        }
+    )
+})
+
+app.get('/sessoes', (req,res)=>{
+    treinamento.query('SELECT * FROM sessoes',(err, results)=>{
+        if(err){
+            return res.status(500).send('Erro no cadastro');
+        }
+        res.json(results);
+    });
+});
+
+app.put('/sessoes/:id', (req, res)=>{
+    const { id } = req.params;
+    const{aluno, personal, tipo_treino, data, horario, observacoes}= req.body ;
+
+    const query = ' UPDATE sessoes SET aluno= ?, personal= ?, tipo_treino= ?, data= ?, horario= ?, observacoes=? WHERE id=?';
+    treinamento.query(query,[aluno, personal, tipo_treino, data, horario, observacoes, id], (err, results)=>{
+        if(err){
+            return res.status(500).send('Erro na atualização! Verifique os dados novamente.');
+
+        }
+
+        if (results.affectedRows === 0){
+            return res.status(404).send('Não encontramos o cadastro desejado');
+
+        }
+
+        res.send ("Cadastro atualizado com sucesso!");
+    });
+
+
+});
+
+app.delete('/sessoes/:id', (req, res)=>{
+const {id}= req.params;
+    treinamento.query('DELETE FROM sessoes WHERE id = ?',[id],(err,results)=>{
+        if (err){
+            return res.status (500).sned ('Erro ao deletar');
+
+        }
+
+        if (results.affectedRows === 0) {
+            return res.status(404).send('Sessao não encontrada');
+        }
+
+        res.status(200).send('Sessão deletada com sucesso!');
+    });
+});
+
+// PARTE DA ASSINATURA ◙◙◙◙◙
+
+app.post('/assinatura', (req, res) => {
+    const  {nome, duracao_meses, preco, descricao}= req.body
+   
+    if (!nome || typeof nome != 'string' || nome.trim() == '') {
+        return res.status(400).send('Cadastre corretamente o nome do aluno , preencha todos os campos com as informações correta');
+    }
+
+    if (!duracao_meses || typeof duracao_meses != 'string' || duracao_meses.trim() == '') {
+        return res.status(400).send('Cadastre corretamente a duração da assinatura, preencha todos os campos com as informações correta');
+    }
+    
+    if (!preco || typeof preco != 'number' ) {
+        return res.status(400).send('Atenção, cadastre o valor corretamente');
+    }
+    
+
+
+
+    treinamento.query(
+        'INSERT INTO assinatura (nome, duracao_meses, preco, descricao) VALUES (?,?,?,?)',
         [
             nome,
+            duracao_meses,
             preco, 
-            quantidade, 
+            descricao, 
         ],
         () => {
-            res.status(201).send('Consulta cadastrada com sucesso!')
+            res.status(201).send('Plano cadastrado com sucesso')
     })
 })
 
-
-app.get('/produtos', (req, res) => {
-    conexao.query('SELECT * FROM  produtos', (err, results) => {
+app.get('/assinatura', (req, res) => {
+    treinamento.query('SELECT * FROM  assinatura', (err, results) => {
         if (err) {
-            res.status(500).send('Erro ao buscas produtos')
+            res.status(500).send('Erro ao buscas assinatura')
         }
         
         res.status(200).send(results)
     })
 })
 
-
-app.delete('/produtos/:id', (req, res)=>{
+app.delete('/assinatura/:id', (req, res)=>{
     const {id}= req.params;
-    conexao.query('DELETE FROM produtos WHERE id = ?', [id],(err, results)=>{
+    treinamento.query('DELETE FROM assinatura WHERE id = ?', [id],(err, results)=>{
         if(err){
             return res.status(500).send(' Erro ao deletar');
         }
         if (results.affectedRows === 0) {
-            return res.status(404).send( 'Produto não encontrado');
+            return res.status(404).send( 'Assinatura não encontrado');
         }
         
-        res.status(200).send('Produto deletado com sucesso');
+        res.status(200).send('Assinatura deletado com sucesso');
     });
     
 });
 
-
-app.put('/produtos/:id', (req, res)=>{
+app.put('/assinatura/:id', (req, res)=>{
     const { id } = req.params;
-    const{nome, preco, quantidade}= req.body;
+    const{nome, duracao_meses, preco, descricao}= req.body;
     
-    const query = 'UPDATE produtos SET NOME = ?, preco = ?, quantidade= ? where id= ?';
-    conexao.query(query, [nome, preco,quantidade, id], (err, results)=>{
+    const query = 'UPDATE assinatura SET nome = ?, duracao_meses=?, preco = ?, descricao= ? WHERE id= ?';
+    treinamento.query(query, [nome, duracao_meses,preco, descricao, id], (err, results)=>{
         if(err) {
             return res.status(500).send('Erro ao atualizar');
         }
         
         if ( results.affectedRows === 0){
-            return res.status(404).send('Produto não encontrado');
+            return res.status(404).send('Plano não encontrado');
         } 
         
-        res.send('Produto atualizado com sucesso');
-    });
-});
-// PARTE DE FUNCIONARIOS
-app.post('/funcionarios', (req, res) => {
-    const {nome, funcao, salario}= req.body
-   
-
-    conexao.query(
-        'INSERT INTO funcionarios (nome, funcao, salario) VALUES (?,?,?)',
-        [
-            nome,
-            funcao, 
-            salario, 
-        ],
-        () => {
-            res.status(201).send('Consulta de Funcionário cadastrada com sucesso!')
-    })
-})
-
-
-app.get('/funcionarios', (req, res) => {
-    conexao.query('SELECT * FROM  funcionarios', (err, results) => {
-        if (err) {
-            res.status(500).send('Erro ao buscar funcionario')
-        }
-        
-        res.status(200).send(results)
-    })
-})
-
-app.delete('/funcionarios/:id', (req, res)=>{
-    const {id}= req.params;
-    conexao.query('DELETE FROM funcionarios WHERE id = ?', [id],(err, results)=>{
-        if(err){
-            return res.status(500).send(' Erro ao deletar');
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).send( 'Funcionário não encontrado');
-        }
-        
-        res.status(200).send('Funcionário deletado com sucesso');
-    });
-    
-});
-
-app.put('/funcionarios/:id', (req, res)=>{
-    const { id } = req.params;
-    const{nome, funcao, salario}= req.body;
-    
-    const query = 'UPDATE funcionarios SET nome = ?, funcao = ?, salario= ? where id= ?';
-    conexao.query(query, [nome, funcao ,salario, id], (err, results)=>{
-        if(err) {
-            return res.status(500).send('Erro ao atualizar');
-        }
-        
-        if ( results.affectedRows === 0){
-            return res.status(404).send('Funcionário não encontrado');
-        } 
-        
-        res.send('Produto atualizado com sucesso');
+        res.send('Plano atualizado com sucesso');
     });
 });
 
-app.listen(3000, () => {
-    console.log("Servidor backend rodando em http://localhost:3000")
+app.listen(3000, ()=> {
+    console.log("Servidor backend online http://localhost:3000")
 })
